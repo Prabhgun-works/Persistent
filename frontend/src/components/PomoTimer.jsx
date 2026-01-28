@@ -1,83 +1,77 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 
-export default function Timer() {
-  const Duration = .1;
-  const DAILY_TARGET = 2;
+const WORK_TIME = 25 * 60;
+const BREAK_TIME = 5 * 60;
 
-  const totalSeconds = Duration * 60;
-
-  const [timeLeft, setTimeLeft] = useState(totalSeconds);
-  const [isRunning, setIsRunning] = useState(false);
+export default function PomoDoro({ habit }) {
+  const [seconds, setSeconds] = useState(WORK_TIME);
+  const [running, setRunning] = useState(false);
+  const [isBreak, setIsBreak] = useState(false);
   const [completedPomodoros, setCompletedPomodoros] = useState(0);
-  const [focusSecondsToday, setFocusSecondsToday] = useState(0);
 
-  const intervalRef = useRef(null);
+useEffect(() => {
+  if (!running) return;
 
-  const handleStartStop = () => {
-    setIsRunning((prev) => !prev);
-  };
+  const timer = setTimeout(() => {
+    setSeconds((prev) => {
+      if (prev === 1) {
+        setRunning(false);
 
-  const handleReset = () => {
-    clearInterval(intervalRef.current);
-    setTimeLeft(totalSeconds);
-    setIsRunning(false);
-  };
-
-  useEffect(() => {
-    if (!isRunning) return;
-
-    intervalRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(intervalRef.current);
+        if (!isBreak) {
           setCompletedPomodoros((c) => c + 1);
-          setFocusSecondsToday((t) => t + totalSeconds);
-          setIsRunning(false);
-          return 0;
         }
-        return prev - 1;
-      });
-    }, 1000);
 
-    return () => clearInterval(intervalRef.current);
-  }, [isRunning,totalSeconds]);
+        return 0;
+      }
 
-  const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+      return prev - 1;
+    });
+  }, 1000);
+
+  return () => clearTimeout(timer);
+}, [running, isBreak, seconds]);
+  const startPause = () => setRunning(!running);
+
+  const reset = () => {
+    setRunning(false);
+    setSeconds(isBreak ? BREAK_TIME : WORK_TIME);
+  };
+
+  const startBreak = () => {
+    setIsBreak(true);
+    setSeconds(BREAK_TIME);
+    setRunning(false);
+  };
+
+  const backToWork = () => {
+    setIsBreak(false);
+    setSeconds(WORK_TIME);
+    setRunning(false);
+  };
+
+  const format = (s) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
   };
 
   return (
-    <div className="timer-container">
-      <h1>{formatTime(timeLeft)}</h1>
+    <div>
+      <h2>{habit?.habitName}</h2>
+      <h1>{format(seconds)}</h1>
 
-      <div className="timer-buttons">
-        <button onClick={handleStartStop}>
-          {isRunning ? "Pause" : "Start"}
-        </button>
-        <button onClick={handleReset}>Reset</button>
-      </div>
+      <button onClick={startPause}>
+        {running ? "Pause" : "Start"}
+      </button>
+      <button onClick={reset}>Reset</button>
 
-      {/* Statistics */}
-      <div className="stats">
-        <p>
-          <strong>Pomodoros Today:</strong>{" "}
-          {completedPomodoros} / {DAILY_TARGET}
-        </p>
+      {!isBreak ? (
+        <button onClick={startBreak}>Break</button>
+      ) : (
+        <button onClick={backToWork}>Work</button>
+      )}
 
-        <p>
-          <strong>Focus Time:</strong>{" "}
-          {Math.floor(focusSecondsToday / 60)} minutes
-        </p>
-
-        <p>
-          <strong>Status:</strong>{" "}
-          {completedPomodoros >= DAILY_TARGET
-            ? "Goal completed 🎯"
-            : "In progress"}
-        </p>
-      </div>
+      <p>Completed Pomodoros: {completedPomodoros}</p>
     </div>
   );
 }
