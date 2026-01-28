@@ -3,34 +3,33 @@ import { useEffect, useState } from "react";
 const WORK_TIME = 25 * 60;
 const BREAK_TIME = 5 * 60;
 
-export default function Pomodoro({ habit }) {
+export default function PomoDoro({ habit }) {
   const [seconds, setSeconds] = useState(WORK_TIME);
   const [running, setRunning] = useState(false);
   const [isBreak, setIsBreak] = useState(false);
   const [completedPomodoros, setCompletedPomodoros] = useState(0);
 
-  useEffect(() => {
-    if (!running) return;
+useEffect(() => {
+  if (!running) return;
 
-    const timer = setTimeout(() => { //Eslint screams of state update solved 
-      setSeconds((prev) => {
-        if (prev === 1) {
-          setRunning(false);
+  const timer = setTimeout(() => {
+    setSeconds((prev) => {
+      if (prev === 1) {
+        setRunning(false);
 
-          if (!isBreak) {
-            setCompletedPomodoros((c) => c + 1);
-          }
-
-          return 0;
+        if (!isBreak) {
+          setCompletedPomodoros((c) => c + 1);
         }
 
-        return prev - 1;
-      });
-    }, 1000);
+        return 0;
+      }
 
-    return () => clearTimeout(timer);
-  }, [running, isBreak]);
+      return prev - 1;
+    });
+  }, 1000);
 
+  return () => clearTimeout(timer);
+}, [running, isBreak, seconds]);
   const startPause = () => setRunning(!running);
 
   const reset = () => {

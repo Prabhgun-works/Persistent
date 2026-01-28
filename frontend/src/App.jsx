@@ -1,8 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import HabitForm from "./HabitForm";
-import PomoDoro from "./PomoDoro";
-import "./global.css";
-
+import HabitForm from "./components/HabitForm";
+import PomoDoro from "./components/PomoTimer";
+import "./styles/global.css";
 export default function App() {
   return (
     <BrowserRouter>
