@@ -1,77 +1,62 @@
 import { useEffect, useState } from "react";
+import { useHabit } from "../context/HabitContext";
 
-const WORK_TIME = 25 * 60;
-const BREAK_TIME = 5 * 60;
+const WORK = 25 * 60;
+const BREAK = 5 * 60;
 
-export default function PomoDoro({ habit }) {
-  const [seconds, setSeconds] = useState(WORK_TIME);
+export default function PomoDoro() {
+  const { activeHabit, completePomodoro } = useHabit();
+  const [seconds, setSeconds] = useState(WORK);
   const [running, setRunning] = useState(false);
   const [isBreak, setIsBreak] = useState(false);
-  const [completedPomodoros, setCompletedPomodoros] = useState(0);
 
-useEffect(() => {
-  if (!running) return;
+  useEffect(() => {
+    if (!running) return;
 
-  const timer = setTimeout(() => {
-    setSeconds((prev) => {
-      if (prev === 1) {
-        setRunning(false);
+    const t = setTimeout(() => {
+      setSeconds(s => s - 1);
+    }, 1000);
 
-        if (!isBreak) {
-          setCompletedPomodoros((c) => c + 1);
-        }
+    return () => clearTimeout(t);
+  }, [running, seconds]);
 
-        return 0;
-      }
+  useEffect(() => {
+    
+    if (seconds !== 0) return;
 
-      return prev - 1;
-    });
-  }, 1000);
+    setRunning(false);
 
-  return () => clearTimeout(timer);
-}, [running, isBreak, seconds]);
-  const startPause = () => setRunning(!running);
+    if (!isBreak) {
+      completePomodoro(); // 🔥 backend decides streaks
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seconds, isBreak]);
 
   const reset = () => {
     setRunning(false);
-    setSeconds(isBreak ? BREAK_TIME : WORK_TIME);
+    setSeconds(isBreak ? BREAK : WORK);
   };
 
-  const startBreak = () => {
-    setIsBreak(true);
-    setSeconds(BREAK_TIME);
-    setRunning(false);
-  };
-
-  const backToWork = () => {
-    setIsBreak(false);
-    setSeconds(WORK_TIME);
-    setRunning(false);
-  };
-
-  const format = (s) => {
-    const m = Math.floor(s / 60);
-    const sec = s % 60;
-    return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
-  };
+  const format = (s) =>
+    `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
   return (
-    <div>
-      <h2>{habit?.habitName}</h2>
+    <div className="pomodoro">
+      <h2>{activeHabit?.taskName}</h2>
       <h1>{format(seconds)}</h1>
 
-      <button onClick={startPause}>
-        {running ? "Pause" : "Start"}
-      </button>
-      <button onClick={reset}>Reset</button>
-
-      {!isBreak ? (
-        <button onClick={startBreak}>Break</button>
-      ) : (
-        <button onClick={backToWork}>Work</button>
-      )}
-
-      <p>Completed Pomodoros: {completedPomodoros}</p>
+      <div className="controls">
+        <button onClick={() => setRunning(!running)}>
+          {running ? "Pause" : "Start"}
+        </button>
+        <button onClick={reset}>Reset</button>
+        <button onClick={() => {
+          setIsBreak(!isBreak);
+          setSeconds(!isBreak ? BREAK : WORK);
+        }}>
+          {isBreak ? "Work" : "Break"}
+        </button>
+      </div>
     </div>
   );
 }
