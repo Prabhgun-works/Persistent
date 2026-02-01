@@ -1,77 +1,79 @@
 import { useEffect, useState } from "react";
+import { useHabit } from "../context/HabitContext";
+import "../styles/pomodoro.css";
 
-const WORK_TIME = 25 * 60;
-const BREAK_TIME = 5 * 60;
+const WORK = 25 * 60;
+const BREAK = 5 * 60;
 
-export default function PomoDoro({ habit }) {
-  const [seconds, setSeconds] = useState(WORK_TIME);
+export default function Pomodoro() {
+  const { activeHabit, completePomodoro } = useHabit();
+
+  const [seconds, setSeconds] = useState(WORK);
   const [running, setRunning] = useState(false);
   const [isBreak, setIsBreak] = useState(false);
-  const [completedPomodoros, setCompletedPomodoros] = useState(0);
 
-useEffect(() => {
-  if (!running) return;
+  /* ---------- TIMER TICK ---------- */
+  useEffect(() => {
+    if (!running) return;
 
-  const timer = setTimeout(() => {
-    setSeconds((prev) => {
-      if (prev === 1) {
-        setRunning(false);
+    const t = setTimeout(() => {
+      setSeconds(s => s - 1);
+    }, 1000);
 
-        if (!isBreak) {
-          setCompletedPomodoros((c) => c + 1);
-        }
+    return () => clearTimeout(t);
+  }, [running, seconds]);
 
-        return 0;
-      }
+  /* ---------- SESSION END ---------- */
+  useEffect(() => {
+    if (seconds !== 0) return;
 
-      return prev - 1;
-    });
-  }, 1000);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setRunning(false);
 
-  return () => clearTimeout(timer);
-}, [running, isBreak, seconds]);
-  const startPause = () => setRunning(!running);
+    // only count streaks if a habit exists
+    if (!isBreak && activeHabit) {
+      completePomodoro();
+    }
+  }, [seconds, isBreak, activeHabit, completePomodoro]);
 
+  /* ---------- HELPERS ---------- */
   const reset = () => {
     setRunning(false);
-    setSeconds(isBreak ? BREAK_TIME : WORK_TIME);
+    setSeconds(isBreak ? BREAK : WORK);
   };
 
-  const startBreak = () => {
-    setIsBreak(true);
-    setSeconds(BREAK_TIME);
+  const toggleMode = () => {
+    setIsBreak(b => !b);
+    setSeconds(!isBreak ? BREAK : WORK);
     setRunning(false);
   };
 
-  const backToWork = () => {
-    setIsBreak(false);
-    setSeconds(WORK_TIME);
-    setRunning(false);
-  };
+  const format = (s) =>
+    `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
-  const format = (s) => {
-    const m = Math.floor(s / 60);
-    const sec = s % 60;
-    return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
-  };
-
+  /* ---------- UI ---------- */
   return (
-    <div>
-      <h2>{habit?.habitName}</h2>
-      <h1>{format(seconds)}</h1>
+    <div className={`pomodoro-timer ${running ? "pomodoro-running" : ""}`}>
+      
+      <p className="habit-label">
+        {activeHabit
+          ? `Focusing on: ${activeHabit.taskName}`
+          : "Free focus session"}
+      </p>
 
-      <button onClick={startPause}>
-        {running ? "Pause" : "Start"}
-      </button>
-      <button onClick={reset}>Reset</button>
+      <h1 className="timer">{format(seconds)}</h1>
 
-      {!isBreak ? (
-        <button onClick={startBreak}>Break</button>
-      ) : (
-        <button onClick={backToWork}>Work</button>
-      )}
+      <div className="controls">
+        <button onClick={() => setRunning(r => !r)}>
+          {running ? "Pause" : "Start"}
+        </button>
 
-      <p>Completed Pomodoros: {completedPomodoros}</p>
+        <button onClick={reset}>Reset</button>
+
+        <button onClick={toggleMode}>
+          {isBreak ? "Work" : "Break"}
+        </button>
+      </div>
     </div>
   );
 }

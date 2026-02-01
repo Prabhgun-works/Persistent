@@ -1,0 +1,15 @@
+.pomodoro-timer {
+  font-size: clamp(2rem, 4vw, 8rem);
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-align: center;
+}
+@keyframes pulse {
+  0% { opacity: 0.9; }
+  50% { opacity: 1; }
+  100% { opacity: 0.9; }
+}
+
+.pomodoro-running {
+  animation: pulse 2s ease-in-out infinite;
+}

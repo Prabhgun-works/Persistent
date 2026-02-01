@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useHabit } from "../context/HabitContext";
 
 export default function HabitForm() {
   const [taskName, setTaskName] = useState("");
   const [dailyTarget, setDailyTarget] = useState(2);
   const navigate = useNavigate();
+  const { setActiveHabit } = useHabit();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -12,16 +14,19 @@ export default function HabitForm() {
     const habit = {
       taskName,
       dailyTarget,
-      startDate: Date.now(),
+      totalDays: 30,
+      milestones: 5,
+      sundayTarget: 1
     };
 
     await fetch("http://localhost:5050/habits", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(habit),
+      body: JSON.stringify(habit)
     });
 
-    navigate("/pomodoro", { state: habit });
+    setActiveHabit(habit);
+    navigate("/pomodoro");
   };
 
   return (
@@ -29,7 +34,7 @@ export default function HabitForm() {
       <h2>Create Habit</h2>
 
       <input
-        placeholder="Task name"
+        placeholder="What are you showing up for?"
         value={taskName}
         onChange={(e) => setTaskName(e.target.value)}
         required
@@ -44,7 +49,7 @@ export default function HabitForm() {
         <option value={4}>4 Pomodoros / day</option>
       </select>
 
-      <button type="submit">Start Focus</button>
+      <button type="submit">Start Showing Up</button>
     </form>
   );
 }
