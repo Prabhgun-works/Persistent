@@ -1,15 +1,30 @@
 /* ---------- RESET & BASE ---------- */
+
+:root {
+  --bg: #01070d;
+  --text: #e6e8eb;
+  --muted: #9aa4af;
+  --card: #020b16;
+}
+
+[data-theme="light"] {
+  --bg: #eef6ff;        /* lightest blue */
+  --text: #01070d;
+  --muted: #4b5563;
+  --card: #ffffff;
+}
 * {
   box-sizing: border-box;
 }
-
-html,
 body {
   height: 100%;
   margin: 0;
   overflow: hidden; /* single-screen app */
   font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #01070d;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* ---------- PAGE ---------- */
@@ -82,6 +97,7 @@ body {
   background-color: #01070d;
   border: 1px solid #000104;
 }
+
 
 /* ---------- RESPONSIVE ---------- */
 @media (max-width: 480px) {

@@ -6,7 +6,6 @@ const HabitContext = createContext();
 export function HabitProvider({ children }) {
   const [activeHabit, setActiveHabit] = useState(null);
   const [stats, setStats] = useState(null);
-
   const completePomodoro = async () => {
     if (!activeHabit) return;
 

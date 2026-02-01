@@ -1,44 +1,55 @@
-import { createContext, useContext, useState, useEffect } from "react";
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useContext, useEffect, useState } from "react";
 
 const AuthContext = createContext();
 
-export function AuthProvider({ children }) {
+export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
+  // Check session on page refresh
   useEffect(() => {
-    // restore session on refresh
     fetch("http://localhost:5050/auth/me", {
-      credentials: "include",
+      credentials: "include"
     })
-      .then(res => res.ok && res.json())
-      .then(data => data && setUser(data.user));
+      .then(res => res.ok ? res.json() : null)
+      .then(data => setUser(data))
+      .catch(() => setUser(null));
   }, []);
 
-  const login = async (payload) => {
+  const login = async (username, password) => {
     const res = await fetch("http://localhost:5050/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ username, password })
     });
 
+    if (!res.ok) throw new Error("Login failed");
+
     const data = await res.json();
-    setUser(data.user);
+    setUser(data);
+  };
+
+  const signup = async (username, password) => {
+    await fetch("http://localhost:5050/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password })
+    });
   };
 
   const logout = async () => {
     await fetch("http://localhost:5050/auth/logout", {
-      credentials: "include",
+      credentials: "include"
     });
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, signup, logout }}>
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);

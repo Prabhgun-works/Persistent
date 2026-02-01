@@ -1,15 +1,18 @@
 import { useEffect, useState } from "react";
 import { useHabit } from "../context/HabitContext";
+import "../styles/pomodoro.css";
 
 const WORK = 25 * 60;
 const BREAK = 5 * 60;
 
-export default function PomoDoro() {
+export default function Pomodoro() {
   const { activeHabit, completePomodoro } = useHabit();
+
   const [seconds, setSeconds] = useState(WORK);
   const [running, setRunning] = useState(false);
   const [isBreak, setIsBreak] = useState(false);
 
+  /* ---------- TIMER TICK ---------- */
   useEffect(() => {
     if (!running) return;
 
@@ -20,40 +23,54 @@ export default function PomoDoro() {
     return () => clearTimeout(t);
   }, [running, seconds]);
 
+  /* ---------- SESSION END ---------- */
   useEffect(() => {
-    
     if (seconds !== 0) return;
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setRunning(false);
 
-    if (!isBreak) {
-      completePomodoro(); // 🔥 backend decides streaks
+    // only count streaks if a habit exists
+    if (!isBreak && activeHabit) {
+      completePomodoro();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [seconds, isBreak]);
+  }, [seconds, isBreak, activeHabit, completePomodoro]);
 
+  /* ---------- HELPERS ---------- */
   const reset = () => {
     setRunning(false);
     setSeconds(isBreak ? BREAK : WORK);
   };
 
+  const toggleMode = () => {
+    setIsBreak(b => !b);
+    setSeconds(!isBreak ? BREAK : WORK);
+    setRunning(false);
+  };
+
   const format = (s) =>
     `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 
+  /* ---------- UI ---------- */
   return (
-    <div className="pomodoro">
-      <h2>{activeHabit?.taskName}</h2>
-      <h1>{format(seconds)}</h1>
+    <div className={`pomodoro-timer ${running ? "pomodoro-running" : ""}`}>
+      
+      <p className="habit-label">
+        {activeHabit
+          ? `Focusing on: ${activeHabit.taskName}`
+          : "Free focus session"}
+      </p>
+
+      <h1 className="timer">{format(seconds)}</h1>
 
       <div className="controls">
-        <button onClick={() => setRunning(!running)}>
+        <button onClick={() => setRunning(r => !r)}>
           {running ? "Pause" : "Start"}
         </button>
+
         <button onClick={reset}>Reset</button>
-        <button onClick={() => {
-          setIsBreak(!isBreak);
-          setSeconds(!isBreak ? BREAK : WORK);
-        }}>
+
+        <button onClick={toggleMode}>
           {isBreak ? "Work" : "Break"}
         </button>
       </div>

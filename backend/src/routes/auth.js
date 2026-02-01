@@ -1,17 +1,37 @@
 import express from "express";
+import fs from "fs";
+import path from "path";
 
 const router = express.Router();
+const USERS_FILE = path.resolve("src/data/users.json");
 
-// TEMP in-memory user (later replace with DB)
-const USERS = [
-  { id: 1, username: "persistent_warrior", password: "test123" }
-];
+router.post("/signup", (req, res) => {
+  const { username, password } = req.body;
 
-// LOGIN
+  const users = JSON.parse(fs.readFileSync(USERS_FILE, "utf-8"));
+
+  const exists = users.find(u => u.username === username);
+  if (exists) {
+    return res.status(400).json({ message: "User already exists" });
+  }
+
+  const user = {
+    id: Date.now().toString(),
+    username,
+    password
+  };
+
+  users.push(user);
+  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+
+  res.status(201).json({ message: "Signup successful" });
+});
 router.post("/login", (req, res) => {
   const { username, password } = req.body;
 
-  const user = USERS.find(
+  const users = JSON.parse(fs.readFileSync(USERS_FILE, "utf-8"));
+
+  const user = users.find(
     u => u.username === username && u.password === password
   );
 
@@ -19,46 +39,22 @@ router.post("/login", (req, res) => {
     return res.status(401).json({ message: "Invalid credentials" });
   }
 
-  // store user id in cookie
   res.cookie("userId", user.id, {
     httpOnly: true,
     sameSite: "lax"
   });
 
-  res.json({
-    user: {
-      id: user.id,
-      username: user.username
-    }
-  });
+  res.json({ id: user.id, username: user.username });
 });
-
-// ME (restore session)
 router.get("/me", (req, res) => {
-  const userId = req.cookies.userId;
+  const { userId } = req.cookies;
+  if (!userId) return res.status(401).json({ message: "Not logged in" });
 
-  if (!userId) {
-    return res.status(401).json({ user: null });
-  }
+  const users = JSON.parse(fs.readFileSync(USERS_FILE, "utf-8"));
+  const user = users.find(u => u.id === userId);
 
-  const user = USERS.find(u => u.id === Number(userId));
+  if (!user) return res.status(401).json({ message: "Invalid session" });
 
-  if (!user) {
-    return res.status(401).json({ user: null });
-  }
-
-  res.json({
-    user: {
-      id: user.id,
-      username: user.username
-    }
-  });
+  res.json({ id: user.id, username: user.username });
 });
-
-// LOGOUT
-router.post("/logout", (req, res) => {
-  res.clearCookie("userId");
-  res.json({ message: "Logged out" });
-});
-
 export default router;
